@@ -1,0 +1,13 @@
+doctype html
+html(class="dark-theme")
+    block variables
+    head
+        title #{title}
+        link(rel='icon', href='favicon.ico?v=1.0')
+        link(rel='stylesheet', href='/stylesheets/style.css')
+    body
+        div(class="buttons-header")
+            a(href='/') Search
+            a(href='/favourite') Favourites
+        div(class='page-content')
+            block content

@@ -1,0 +1,126 @@
+/* Main Page */
+
+body {
+    display: flex;
+    width: auto;
+    height: 98vh;
+    justify-content: center;
+
+    background-color: var(--primary-color);
+
+    .buttons-header {
+        display: flex;
+        position: absolute;
+        width: 40%;
+        justify-content: center;
+
+        a {
+            margin: 20px;
+            font-size: 2rem;
+            text-decoration: none;
+            color: var(--secondary-color);
+        }
+    }
+
+    .page-content {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+
+        .left-button-container {
+            display: flex;
+            z-index: 1;
+            height: 100%;
+            width: 100%;
+
+            justify-content: flex-start;
+
+            button {
+                background-color: rgba(1, 1, 1, 0.2);
+                border-color: transparent;
+                height: 100%;
+                width: 80%;
+                color: var(--light-shadow);
+                font-size: 2rem;
+            }
+        }
+
+        .right-button-container {
+            display: flex;
+            z-index: 1;
+            height: 100%;
+            width: 100%;
+
+            justify-content: flex-end;
+
+            button {
+                background-color: rgba(1, 1, 1, 0.2);
+                border-color: transparent;
+                height: 100%;
+                width: 80%;
+                color: var(--light-shadow);
+                font-size: 2rem;
+            }
+        }
+
+        .body-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            .video-name {
+                color: var(--light-color);
+                font-size: 1.5rem;
+            }
+
+            .video-body {
+                display: flex;
+
+                .video-body--video {
+                    width: 100%;
+                    height: 100%;
+
+                    iframe {
+                        width: 100%;
+                        height: 100%;
+                    }
+                }
+
+                .group-up {
+                    display: none;
+                    flex-direction: column;
+                    justify-content: space-around;
+                }
+            }
+        }
+    }
+}
+
+/* Favourites */
+
+
+/* Adaptive */
+
+@media screen and (max-width: 900px) {
+    html {
+        display: none !important;
+    }
+}
+
+.dark-theme {
+    --primary-color: #171219;
+    --secondary-color: #225560;
+    --light-color: #70C1B3;
+    --light-shadow: #247BA0;
+}
+
+/* Scrollbar */
+
+:root {
+    ::-webkit-scrollbar {
+        display: none;
+    }
+}

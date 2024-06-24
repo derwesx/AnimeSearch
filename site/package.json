@@ -1,0 +1,26 @@
+{
+  "dependencies": {
+    "debug": "^4.3.5",
+    "express": "^4.19.2",
+    "http-errors": "^2.0.0",
+    "http-proxy-middleware": "^3.0.0",
+    "jade": "^1.11.0",
+    "morgan": "^1.10.0",
+    "pug": "^3.0.3",
+    "pug-cli": "^1.0.0-alpha6",
+    "serve-favicon": "^2.5.0",
+    "watch": "^1.0.2"
+  },
+  "name": "animesearch",
+  "version": "1.0.0",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./bin/www"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

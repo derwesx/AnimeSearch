@@ -1,0 +1,8 @@
+.idea*
+*.log
+.gitignore
+.git*
+.env
+../docker-compose.yaml
+install.sh
+media

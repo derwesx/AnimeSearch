@@ -1,0 +1,31 @@
+debug: true
+env: local
+
+http:
+  port: "8080"
+
+security:
+  jwt:
+    secret: "VerySecretJTW"
+  auth:
+    salt_size: 4
+
+database:
+  postgres:
+    user: "postgres"
+    pass: "postgres"
+    port: "5432"
+    db: "animesearch"
+  redis:
+    port: "6379"
+    pass: "DontNeedBTW"
+    db: 0
+
+log:
+  log_level: debug
+  encoding: console # json or console
+  log_file_name: "./storage/logs/local.log"
+  max_backups: 30 #
+  max_age: 7 #
+  max_size: 1024 #
+  compress: true #
