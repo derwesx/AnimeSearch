@@ -3,7 +3,7 @@ const router = express.Router();
 
 /* GET favourite page. */
 router.get('/', function (req, res, next) {
-    res.render('favourite');
+    res.render('playlists');
 });
 
 module.exports = router;

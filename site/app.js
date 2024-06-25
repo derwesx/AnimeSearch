@@ -6,7 +6,7 @@ var path = require('path');
 
 // Routers
 var mainRouter = require('./routes/main');
-var favouriteRouter = require('./routes/favourite');
+var playlistsRouter = require('./routes/playlists');
 
 // Initialize Express app
 var app = express();
@@ -24,7 +24,7 @@ app.use(favicon(path.join(__dirname, 'public', 'icons', 'favicon.ico')));
 
 // Routes
 app.use('/', mainRouter);
-app.use('/favourite', favouriteRouter);
+app.use('/playlists', playlistsRouter);
 
 // Catch 404 and forward to error handler
 app.use((req, res, next) => {
