@@ -49,7 +49,6 @@ func (handler *DBMaintainer) getEdgeFromCache(key string, forward bool) (newKey 
 }
 
 func (handler *DBMaintainer) GetPreviousAnime(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Previous anime call received")
 	key := chi.URLParam(r, "current_hash")
 	if key == "" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -87,7 +86,6 @@ func (handler *DBMaintainer) GetPreviousAnime(w http.ResponseWriter, r *http.Req
 }
 
 func (handler *DBMaintainer) GetNextAnime(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Next anime call received")
 	key := chi.URLParam(r, "current_hash")
 	if key == "" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -103,25 +101,24 @@ func (handler *DBMaintainer) GetNextAnime(w http.ResponseWriter, r *http.Request
 }
 
 func (handler *DBMaintainer) GetAnimeByKey(w http.ResponseWriter, r *http.Request, key string) {
-	fmt.Println("Get anime call received")
 	w.Header().Set("Content-Type", "application/json")
 	animeID := hashToID(key, handler.getAnimeCount())
 	var anime struct {
-		CurrentHash string `json:"current_hash"`
-		UrlPath     string `json:"url_path"`
+		CurrentHash string   `json:"current_hash"`
+		UrlPaths    []string `json:"episodes"`
 		models.Anime
 	}
 	anime.CurrentHash = key
 	var list []models.Anime
 	handler.db.Offset(animeID).Limit(1).Find(&list)
 	anime.Anime = list[0]
-	anime.UrlPath = filepath.Join("/media/videos/", anime.AnimeHash, "cut.mp4")
 	if anime.Id == 0 {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-
-	anime.Id = 0
+	for _, episode := range anime.Anime.Episodes {
+		anime.UrlPaths = append(anime.UrlPaths, filepath.Join("/media/videos/", anime.AnimeHash, episode, "playback.mp4"))
+	}
 	err := json.NewEncoder(w).Encode(anime)
 	if err != nil {
 		fmt.Println("Error encoding interview:", err)
@@ -129,7 +126,6 @@ func (handler *DBMaintainer) GetAnimeByKey(w http.ResponseWriter, r *http.Reques
 }
 
 func (handler *DBMaintainer) GetAnime(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Get anime call received")
 	w.Header().Set("Content-Type", "application/json")
 	key := chi.URLParam(r, "current_hash")
 	if key == "" || len(key) < 8 {
@@ -137,21 +133,21 @@ func (handler *DBMaintainer) GetAnime(w http.ResponseWriter, r *http.Request) {
 	}
 	animeID := hashToID(key, handler.getAnimeCount())
 	var anime struct {
-		CurrentHash string `json:"current_hash"`
-		UrlPath     string `json:"url_path"`
+		CurrentHash string   `json:"current_hash"`
+		UrlPaths    []string `json:"episodes"`
 		models.Anime
 	}
 	anime.CurrentHash = key
 	var list []models.Anime
 	handler.db.Offset(animeID).Limit(1).Find(&list)
 	anime.Anime = list[0]
-	anime.UrlPath = filepath.Join("/media/videos/", anime.AnimeHash, "cut.mp4")
 	if anime.Id == 0 {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-
-	anime.Id = 0
+	for _, episode := range anime.Anime.Episodes {
+		anime.UrlPaths = append(anime.UrlPaths, filepath.Join("/media/videos/", anime.AnimeHash, episode, "playback.mp4"))
+	}
 	err := json.NewEncoder(w).Encode(anime)
 	if err != nil {
 		fmt.Println("Error encoding interview:", err)
@@ -159,7 +155,6 @@ func (handler *DBMaintainer) GetAnime(w http.ResponseWriter, r *http.Request) {
 }
 
 func createDirectory(path string) error {
-	fmt.Println("Making new dir: ", path)
 	return os.MkdirAll(path, os.ModePerm)
 }
 
@@ -167,6 +162,7 @@ func (handler *DBMaintainer) CreateAnime(w http.ResponseWriter, r *http.Request)
 	decoder := json.NewDecoder(r.Body)
 	var anime models.Anime
 	err := decoder.Decode(&anime)
+	anime.Episodes = make([]string, 0)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
@@ -176,7 +172,12 @@ func (handler *DBMaintainer) CreateAnime(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	anime.AnimeHash = generateRandomHash(16)
-	handler.db.Create(&anime)
+	handler.db.Model(&models.Anime{}).Create(&anime)
+
+	if anime.Id == 0 {
+		http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
+	}
+
 	dirPath := filepath.Join("./media/videos", anime.AnimeHash)
 
 	err = createDirectory(dirPath)
@@ -202,20 +203,42 @@ func (handler *DBMaintainer) UploadAnime(w http.ResponseWriter, r *http.Request)
 	defer file.Close()
 
 	hash := r.FormValue("anime_hash")
+	var anime models.Anime
+	anime.AnimeHash = hash
+	handler.db.Where("anime_hash = ?", anime.AnimeHash).First(&anime)
 
-	destPath := filepath.Join("./media/videos", hash, "cut.mp4")
+	if anime.Id == 0 {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	if len(anime.Episodes) >= 5 {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
+	}
+
+	newEpisodeHash := generateRandomHash(16)
+	destFolder := filepath.Join("./media/videos", hash, newEpisodeHash)
+	err = os.Mkdir(destFolder, os.ModePerm)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error creating directory: %v", err), http.StatusInternalServerError)
+		return
+	}
+	destPath := filepath.Join(destFolder, "playback.mp4")
 	destFile, err := os.Create(destPath)
+	defer destFile.Close()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error creating destination file: %v", err), http.StatusInternalServerError)
 		return
 	}
-	defer destFile.Close()
 
 	_, err = io.Copy(destFile, file)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error saving file: %v", err), http.StatusInternalServerError)
 		return
 	}
+	anime.Episodes = append(anime.Episodes, newEpisodeHash)
+	handler.db.Updates(&anime)
 	http.Error(w, http.StatusText(http.StatusCreated), http.StatusCreated)
 }
 

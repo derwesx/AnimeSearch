@@ -5,7 +5,6 @@ import (
 	"AnimeSearch/models"
 	"fmt"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -18,7 +17,6 @@ func ConnectPostgres(log *log.Logger, cfg *viper.Viper) *gorm.DB {
 	port := cfg.GetString("database.postgres.port")
 	database := cfg.GetString("database.postgres.db")
 	dbURL := "postgres://" + user + ":" + pass + "@localhost:" + port + "/" + database + "?sslmode=disable"
-	log.Info("Connecting to PostgreSQL", zap.String("url", dbURL))
 	db, err := gorm.Open(postgres.New(postgres.Config{
 		DSN: dbURL,
 	}), &gorm.Config{})
@@ -28,7 +26,7 @@ func ConnectPostgres(log *log.Logger, cfg *viper.Viper) *gorm.DB {
 	}
 
 	log.Info("Migrating Postgres")
-	err = db.AutoMigrate(&models.User{}, &models.Anime{})
+	err = db.AutoMigrate(&models.User{}, &models.Anime{}, &models.Playlist{})
 	if err != nil {
 		log.Fatal(fmt.Sprint("Couldn't migrate Postgres", err))
 	}

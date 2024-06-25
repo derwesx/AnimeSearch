@@ -90,7 +90,7 @@ body {
                 }
 
                 .group-up {
-                    display: none;
+                    /*display: none;*/
                     flex-direction: column;
                     justify-content: space-around;
                 }

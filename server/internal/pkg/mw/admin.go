@@ -22,7 +22,7 @@ func (mw *Middleware) Admin(next http.Handler) http.Handler {
 			return
 		}
 		if claims["IsAdmin"] != true {
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
 		next.ServeHTTP(w, r)

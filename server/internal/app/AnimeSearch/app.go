@@ -49,7 +49,7 @@ func setupRoutes(r *chi.Mux) {
 	r.Use(mw.CORSMiddleware)
 	// <-- Auth -->
 	// Input: Name, Email, Password
-	//r.Post("/api/register", authHandler.Register)
+	r.Post("/api/register", authHandler.Register)
 	// Input: Email, Password
 	r.Post("/api/login", authHandler.Login)
 	// Should be authenticated
@@ -67,12 +67,14 @@ func setupRoutes(r *chi.Mux) {
 	r.With(middleware.Admin).Post("/api/anime/delete", maintainer.DeleteAnime)
 
 	// Just a long request for getting video files. TODO make a module with it
-	r.Get("/media/videos/{hash}/{filename}", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/media/videos/{hash}/{episode}/{filename}", func(w http.ResponseWriter, r *http.Request) {
 		hash := chi.URLParam(r, "hash")
+		episode := chi.URLParam(r, "episode")
 		filename := chi.URLParam(r, "filename")
+		fmt.Println("Video route reached ", hash, filename)
 
 		// Construct the absolute file path
-		absFilePath := filepath.Join("./media/videos", hash, filename)
+		absFilePath := filepath.Join("./media/videos", hash, episode, filename)
 
 		// Open the file
 		file, err := os.Open(absFilePath)

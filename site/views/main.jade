@@ -1,30 +1,32 @@
 extends layout
 
 block variables
+    script(src='/javascripts/anime_switcher.js', async)
     title="Search Engine"
 
 block content
     div(class="left-button-container")
-        button(onclick="alert('Left Button clicked!')") Previous
+        button(onclick="PreviousAnime()") Previous
     div(class="body-container")
-        div(class="video-name" id="video-name-english")
-            h1 Drifting Home
+        div(class="video-name")
+            h1(id="video-name-english")
         div(class="video-body" style="width: 60vw; height: 33vw")
             div(class="video-body--video")
-                video(width='100%', height='100%', autoplay, controls)
-                    source(src='/anime/get/5', type='video/mp4')
+                video(id="video_player" width='100%', height='100%', autoplay, controls)
+                    source(id="video_source" src='', type='video/mp4')
                     | Your browser does not support the video tag.
             div(class="group-up")
                 div(class="video-body--description")
                     h3 Description
-                    a Very Interesting Film
+                    br
+                    a(id="description")
                 div(class="video-body--stars")
                     h3 Rating
                     br
-                    a ⭐⭐⭐⭐⭐
-        div(class="video-name" id="video-name-japanese")
-            h2 雨を告げる漂流団地
+                    a(id="rating")
+        div(class="video-name")
+            h2(id="video-name-japanese")
 
     div(class="right-button-container")
-        button(onclick="alert('Right Button clicked!')") Next
+        button(onclick="NextAnime()") Next
 

@@ -8,10 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
@@ -41,15 +39,16 @@ func (handler *Auth) IsAuthenticated(r *http.Request) (user *models.User) {
 
 	claims := token.Claims.(*jwt.MapClaims)
 
-	handler.db.Where("id = ?", (*claims)["Issuer"]).Select("id", "name", "email").First(&user)
-	handler.logger.Debug(fmt.Sprint("User authenticated:", user))
+	handler.db.Where("id = ?", (*claims)["Issuer"]).First(&user)
+	handler.logger.Debug("User authenticated:")
 
 	return user
 }
 
 func (handler *Auth) Authenticate(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	var user = handler.IsAuthenticated(r)
-	if user == nil {
+	if user == nil || user.Id == 0 {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -62,28 +61,36 @@ func (handler *Auth) Authenticate(w http.ResponseWriter, r *http.Request) {
 func (handler *Auth) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
-	var user models.User
+	var user struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
 	err := decoder.Decode(&user)
+
 	if err != nil {
 		handler.logger.Debug("Login failed. Could not decode body.")
-		http.Error(w, "Could not decode body.", http.StatusBadRequest)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
+
 	if user.Email == "" || user.Password == "" {
 		handler.logger.Debug("Login failed. User not found.")
-		http.Error(w, "User not found.", http.StatusBadRequest)
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
+
 	var oldUser models.User
 	handler.db.Where("email = ?", user.Email).First(&oldUser)
 	if oldUser.Id == 0 {
 		handler.logger.Debug("Login failed. User not found.")
-		http.Error(w, "User not found.", http.StatusBadRequest)
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-	handler.logger.Debug("User logging: ", zap.String("params:", user.Password+" "+string(oldUser.Salt)+" "+oldUser.Password))
-	if hashPassword(user.Password, oldUser.Salt) == oldUser.Password {
+
+	if matchPassword(oldUser.Password, user.Password, oldUser.Salt) {
 		handler.logger.Debug("Login succeeded.")
+
+		// Creating new JWT token
 		claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 			"Issuer":    strconv.Itoa(oldUser.Id),
 			"ExpiresAt": time.Now().Add(time.Hour * 72).Unix(),
@@ -91,7 +98,7 @@ func (handler *Auth) Login(w http.ResponseWriter, r *http.Request) {
 		})
 		token, err := claims.SignedString([]byte(handler.config.GetString("security.jwt.secret")))
 		if err != nil {
-			handler.logger.Info(fmt.Sprint("Unexpected error occurred:", err))
+			handler.logger.Fatal(fmt.Sprint("Unexpected error occurred:", err))
 			return
 		}
 		cookie := http.Cookie{
@@ -102,20 +109,18 @@ func (handler *Auth) Login(w http.ResponseWriter, r *http.Request) {
 		}
 		http.SetCookie(w, &cookie)
 
-		oldUser.Password = ""
-		oldUser.Salt = make([]byte, 0)
 		err = json.NewEncoder(w).Encode(oldUser)
 		if err != nil {
-			handler.logger.Info(fmt.Sprint("Login | Unexpected error occurred:", err))
+			handler.logger.Info(fmt.Sprint("Unexpected error occurred:", err))
 		}
-	} else {
-		handler.logger.Debug("Login failed. Email or password incorrect.")
-		http.Error(w, "Login failed.", http.StatusBadRequest)
 		return
 	}
+
+	http.Error(w, "Login failed. Email or password is incorrect.", http.StatusNotFound)
 }
 
 func (handler *Auth) Logout(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	cookie := http.Cookie{
 		Name:     "jwt",
 		Value:    "",
@@ -129,34 +134,34 @@ func (handler *Auth) Logout(w http.ResponseWriter, r *http.Request) {
 func (handler *Auth) Register(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
-	var user models.User
+	var user struct {
+		Name     string `json:"name"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
 	err := decoder.Decode(&user)
 	if err != nil {
 		handler.logger.Debug("Registration failed. Could not decode body.")
 		http.Error(w, "Registration failed.", http.StatusBadRequest)
 		return
 	}
-	user.Salt = random.GenerateSalt(handler.config.GetInt("security.auth.salt_size"))
-	user.Password = hashPassword(user.Password, user.Salt)
-	user.IsAdmin = false
-	user.Favourites = make(pq.Int64Array, 0)
-	handler.logger.Debug(fmt.Sprint("Registering user:", user))
-	handler.db.Create(&user)
+	newUser := models.User{
+		Name:  user.Name,
+		Email: user.Email,
+	}
+	newUser.Salt = random.GenerateSalt(handler.config.GetInt("security.auth.salt_size"))
+	newUser.Password = hashPassword(user.Password, newUser.Salt)
+	handler.db.Create(&newUser)
 
-	// Pls fix it ASAP
-	user.Salt = make([]byte, 0)
-	user.Password = ""
-	user.IsAdmin = false
-
-	if user.Id == 0 {
-		handler.logger.Debug("Registration failed.")
+	if newUser.Id == 0 {
+		handler.logger.Debug("Registration failed. User not created.")
 		http.Error(w, "Registration failed.", http.StatusBadRequest)
 		return
 	}
 	handler.logger.Debug("User registered successfully.")
-	err = json.NewEncoder(w).Encode(user)
+	err = json.NewEncoder(w).Encode(newUser)
 	if err != nil {
-		handler.logger.Fatal(fmt.Sprint("Register | Unexpected error occurred:", err))
+		handler.logger.Fatal(fmt.Sprint("Unexpected error occurred:", err))
 	}
 }
 

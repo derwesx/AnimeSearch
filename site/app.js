@@ -1,21 +1,15 @@
-const createError = require('http-errors');
-const express = require('express');
-const favicon = require('serve-favicon');
-const logger = require('morgan');
-const path = require('path');
-const fs = require('fs');
-
-const { createProxyMiddleware } = require('http-proxy-middleware');
+var createError = require('http-errors');
+var express = require('express');
+var favicon = require('serve-favicon');
+var logger = require('morgan');
+var path = require('path');
 
 // Routers
-const favouriteRouter = require('./routes/favourite');
-const mainRouter = require('./routes/main');
-const nextAnimeRouter = require('./routes/next_anime');
-const prevAnimeRouter = require('./routes/prev_anime');
-const getAnimeRouter = require('./routes/get_anime');
+var mainRouter = require('./routes/main');
+var favouriteRouter = require('./routes/favourite');
 
 // Initialize Express app
-const app = express();
+var app = express();
 
 // Setup view engine
 app.set('views', path.join(__dirname, 'views'));
@@ -31,9 +25,6 @@ app.use(favicon(path.join(__dirname, 'public', 'icons', 'favicon.ico')));
 // Routes
 app.use('/', mainRouter);
 app.use('/favourite', favouriteRouter);
-app.use('/anime/get', getAnimeRouter)
-app.use('/next/:currentHash', nextAnimeRouter)
-app.use('/prev/:currentHash', prevAnimeRouter)
 
 // Catch 404 and forward to error handler
 app.use((req, res, next) => {
@@ -47,7 +38,7 @@ app.use((err, req, res, next) => {
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-    console.error("Unexpected error occurred:", err.message);
+    console.error("Unexpected error occurred:", err);
 
     // Render the error page
     res.status(err.status || 500);
