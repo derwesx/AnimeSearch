@@ -71,7 +71,6 @@ func setupRoutes(r *chi.Mux) {
 		hash := chi.URLParam(r, "hash")
 		episode := chi.URLParam(r, "episode")
 		filename := chi.URLParam(r, "filename")
-		fmt.Println("Video route reached ", hash, filename)
 
 		// Construct the absolute file path
 		absFilePath := filepath.Join("./media/videos", hash, episode, filename)
