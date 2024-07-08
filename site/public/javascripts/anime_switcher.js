@@ -3,8 +3,8 @@ function getRandomString() {
     return `${num}`
 }
 
-let videoPlayer, videoSource;
-let descHandler, rateHandler;
+let videoContainer, videoPlayer, videoSource;
+let miscHandler, descHandler, rateHandler;
 let englishNameHandler, japaneseNameHandler;
 
 let currentHash;
@@ -26,7 +26,7 @@ const SetAnimeBlock = function (data) {
     let englishName = data["name"]
     let japaneseName = data["origin_name"]
     englishNameHandler.textContent = englishName;
-    japaneseNameHandler.textContent = japaneseName;
+    // japaneseNameHandler.textContent = japaneseName;
     let description = data["description"]
     let rating = data["rating"]
     descHandler.textContent = description
@@ -34,6 +34,41 @@ const SetAnimeBlock = function (data) {
 
     // Set current video params
     SetAnime(data, Math.floor(Math.random() * 10))
+}
+
+// Open-up handler
+
+let isDescOpen = false;
+let leftButton, rightButton;
+let expandMask;
+let detachedVideoHoverTag;
+
+function OpenDescription() {
+    leftButton.style.transform = "translate(-100%)";
+    rightButton.style.transform = "translate(+100%)";
+    expandMask.style.display = "none";
+
+    videoPlayer.style.transform = "translate(-20%)";
+    videoContainer.style.width = "90%";
+    videoContainer.classList.remove("no-hover");
+    videoContainer.style.visibility = "hidden";
+    miscHandler.style.visibility = "visible";
+    miscHandler.style.transform = "translate(200%)";
+    miscHandler.style.fontSize = "1.4vw";
+}
+
+function CloseDescription() {
+    leftButton.style.transform = "translate(0)";
+    rightButton.style.transform = "translate(0)";
+    expandMask.style.display = "flex";
+
+    videoPlayer.style.transform = "translate(0)";
+    videoContainer.style.width = "80%";
+    videoContainer.classList.add("no-hover");
+    videoContainer.style.visibility = "visible";
+    miscHandler.style.visibility = "hidden";
+    miscHandler.style.transform = "translate(0)";
+    miscHandler.style.fontSize = "0";
 }
 
 // Next/Previous anime Handler
@@ -71,12 +106,24 @@ window.addEventListener("load", function () {
     if (currentHash == null) {
         currentHash = getRandomString()
     }
+    // Buttons
+    leftButton = document.querySelector(".left-button-container")
+    rightButton = document.querySelector(".right-button-container")
+    expandMask = document.querySelector(".expand-mask")
+    // Video
     videoPlayer = document.getElementById('video_player');
     videoSource = document.getElementById('video_source');
+    videoContainer = document.querySelector('.video-body--video');
+    // Text, etc.
     descHandler = document.getElementById('description');
     rateHandler = document.getElementById('rating');
+    miscHandler = document.querySelector(".group-up")
+    // Name
     englishNameHandler = document.getElementById('video-name-english');
     japaneseNameHandler = document.getElementById('video-name-japanese');
+    // Hover
+    videoContainer.classList.add("no-hover");
+
     try {
         fetch(`http://localhost:8080/api/anime/${currentHash}`)
             .then((response) => response.json())
