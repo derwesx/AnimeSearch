@@ -5,8 +5,9 @@ block variables
     title="Search Engine"
 
 block content
+    div(class="full-screen" onclick="CloseDescription()")
     div(class="left-button-container")
-        button(onclick="PreviousAnime()") Previous
+        button(onclick="PreviousAnime()")
     div(class="body-container")
         div(class="video-name")
             h1(id="video-name-english")
@@ -15,9 +16,10 @@ block content
                 video(id="video_player", autoplay, controls)
                     source(id="video_source" src='', type='video/mp4')
                     | Your browser does not support the video tag.
+                div(class="expand-mask" onclick="OpenDescription()")
             div(class="group-up")
                 div(class="video-body--description")
-                    h3 Description
+                     h3 Description
                     a(id="description")
                 div(class="video-body--stars")
                     h3 Rating
@@ -26,5 +28,5 @@ block content
             h2(id="video-name-japanese")
 
     div(class="right-button-container")
-        button(onclick="NextAnime()") Next
+        button(onclick="NextAnime()")
 

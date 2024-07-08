@@ -5,9 +5,11 @@ html(class="dark-theme")
         title #{title}
         link(rel='icon', href='favicon.ico?v=1.0')
         link(rel='stylesheet', href='/stylesheets/style.css')
+        link(href="https://vjs.zencdn.net/7.14.3/video-js.css" rel="stylesheet")
+        script(src="https://vjs.zencdn.net/7.14.3/video.min.js")
     body
-        div(class="buttons-header")
-            a(href='/') Search
-            a(href='/playlists') Playlists
         div(class='page-content')
             block content
+        div(class="buttons-header")
+            a(id="search_link" href='/') Search
+            a(id="playlists_link" href='/playlists') Playlists
