@@ -1,0 +1,14 @@
+.idea*
+
+.env
+.env.*
+*build
+*prod*
+storage*
+media*
+
+*.log
+
+docker-compose.yaml
+
+*node_modules
